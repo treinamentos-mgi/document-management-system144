@@ -1,20 +1,60 @@
-// Seed do componente raiz do Document Management System.
-//
-// Este é apenas um ponto de partida mínimo. Durante o Passo 3 você vai usar o
-// Agent Mode do GitHub Copilot para construir os componentes:
-//   - components/UploadComponent
-//   - components/DocumentList
-//   - components/DownloadButton
-// e o serviço services/ que consome a API do backend via fetch.
+import { useEffect, useState } from 'react';
+import UploadComponent from './components/UploadComponent';
+import DocumentList from './components/DocumentList';
+import { listDocuments } from './services/documentService';
 
 export default function App() {
+  const [owner, setOwner] = useState('usuario-1');
+  const [documents, setDocuments] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [listError, setListError] = useState('');
+
+  async function loadDocuments() {
+    setIsLoading(true);
+    setListError('');
+
+    try {
+      const result = await listDocuments(owner);
+      setDocuments(result);
+    } catch (error) {
+      setListError(error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    loadDocuments();
+  }, [owner]);
+
   return (
-    <main style={{ fontFamily: 'system-ui, sans-serif', padding: '2rem' }}>
-      <h1>Document Management System</h1>
-      <p>
-        Seed do frontend. Construa a interface durante o Passo 3 usando o Agent
-        Mode do GitHub Copilot.
-      </p>
+    <main className="app-shell">
+      <header className="topbar">
+        <div>
+          <p className="brand-mark">DMS</p>
+          <h1>Document Management</h1>
+        </div>
+
+        <label className="owner-field" htmlFor="owner">
+          <span>Usuário</span>
+          <input
+            id="owner"
+            value={owner}
+            onChange={(event) => setOwner(event.target.value.trimStart() || 'anonymous')}
+            placeholder="Identificador do usuário"
+          />
+        </label>
+      </header>
+
+      <div className="workspace">
+        <UploadComponent owner={owner} onUploaded={loadDocuments} />
+        <DocumentList
+          documents={documents}
+          owner={owner}
+          isLoading={isLoading}
+          error={listError}
+        />
+      </div>
     </main>
   );
 }
